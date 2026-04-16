@@ -4,6 +4,7 @@ Generate AI images, videos, and music directly from **Claude Desktop**, **Cursor
 
 [![PyPI](https://img.shields.io/pypi/v/yaparai)](https://pypi.org/project/yaparai/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/pypi/pyversions/yaparai)](https://pypi.org/project/yaparai/)
 
 ## What is YaparAI?
 
@@ -11,8 +12,10 @@ Generate AI images, videos, and music directly from **Claude Desktop**, **Cursor
 
 - **Image Generation** — Flux, SDXL, Imagen 4 (text-to-image, image-to-image)
 - **Video Generation** — Veo 3.1, Kling (text-to-video, image-to-video)
-- **Music Generation** — Suno v4 (full songs with vocals)
-- **And more** — Lip sync, virtual try-on, AI mannequin, ad creation
+- **Music Generation** — Suno v4 (full songs with vocals, instrumentals)
+- **Image Editing** — Background removal, face swap, style transfer
+- **E-commerce** — Virtual try-on, AI mannequin for product photos
+- **Avatar** — Lip sync talking avatars from photos
 
 ## Quick Start
 
@@ -55,17 +58,49 @@ In Claude Desktop, just ask:
 
 > "Make a video of a cat walking on a beach"
 
+> "Remove the background from this image: https://example.com/photo.jpg"
+
 > "Check my credit balance"
 
-## Available Tools
+## Available Tools (13)
+
+### Generation
 
 | Tool | Description | Cost |
 |------|-------------|------|
-| `generate_image` | Generate images from text prompts | ~6 credits |
-| `generate_video` | Generate videos from text or images | ~350 credits |
-| `generate_music` | Generate music from text descriptions | ~14 credits |
+| `generate_image` | Generate images from text prompts (Flux, SDXL, Imagen 4) | ~6 credits |
+| `generate_video` | Generate videos from text or images (Veo 3.1, Kling) | ~350 credits |
+| `generate_music` | Generate music from text descriptions (Suno v4) | ~14 credits |
+| `generate_music_video` | Generate music + matching video combined | ~364 credits |
+
+### Image Editing
+
+| Tool | Description | Cost |
+|------|-------------|------|
+| `transform_image` | Transform an image using AI (img2img style transfer) | ~6 credits |
+| `remove_background` | Remove background from any image | ~2 credits |
+| `swap_face` | Swap faces in an image | ~6 credits |
+
+### E-commerce
+
+| Tool | Description | Cost |
+|------|-------------|------|
+| `virtual_try_on` | Virtual clothing try-on on a person's photo | ~6 credits |
+| `generate_mannequin` | Generate AI mannequin/model for product photos | ~6 credits |
+
+### Avatar
+
+| Tool | Description | Cost |
+|------|-------------|------|
+| `lip_sync` | Create talking avatar from a photo | ~14 credits |
+
+### Utility
+
+| Tool | Description | Cost |
+|------|-------------|------|
 | `check_balance` | Check your credit balance | Free |
-| `list_models` | List available models and costs | Free |
+| `list_models` | List all available models and costs | Free |
+| `get_job_status` | Check status of a running job | Free |
 
 ## Configuration
 
@@ -89,14 +124,60 @@ Same configuration format — add to your MCP settings:
 }
 ```
 
+## Claude Code
+
+Add to your `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "yaparai": {
+      "command": "yaparai",
+      "env": {
+        "YAPARAI_API_KEY": "yap_live_your_key_here"
+      }
+    }
+  }
+}
+```
+
+## Python SDK Usage
+
+You can also use YaparAI as a Python library:
+
+```python
+import asyncio
+from yaparai.client import YaparAIClient
+
+async def main():
+    client = YaparAIClient(api_key="yap_live_your_key_here")
+
+    # Generate an image
+    job = await client.generate({
+        "type": "image",
+        "prompt": "A futuristic city at sunset",
+    })
+
+    # Wait for result
+    result = await client.wait_for_result(job["job_id"])
+    print(result["result_url"])
+
+    # Check balance
+    balance = await client.get_balance()
+    print(f"Credits: {balance['balance']}")
+
+asyncio.run(main())
+```
+
 ## Pricing
 
 Credits are deducted from your YaparAI account balance:
 
 - **100 free credits** on signup (no credit card required)
-- Image: ~6 credits (~$0.50)
-- Video: ~350 credits (~$3-5)
-- Music: ~14 credits (~$1)
+- Image generation: ~6 credits (~$0.50)
+- Video generation: ~350 credits (~$3-5)
+- Music generation: ~14 credits (~$1)
+- Background removal: ~2 credits (~$0.15)
 - Credits never expire
 
 [View pricing](https://www.yaparai.com/pricing)
@@ -105,7 +186,7 @@ Credits are deducted from your YaparAI account balance:
 
 - **Website**: [yaparai.com](https://www.yaparai.com)
 - **Gallery**: [yaparai.com/gallery](https://www.yaparai.com/gallery)
-- **API Docs**: [yaparai.com/settings](https://www.yaparai.com/settings) (API key management)
+- **API Keys**: [yaparai.com/settings](https://www.yaparai.com/settings)
 - **Support**: destek@yaparai.com
 
 ## License

@@ -46,7 +46,7 @@ async def generate_image(
         "status": "success",
         "image_url": result.get("result_url"),
         "job_id": result.get("job_id"),
-        "credits_used": job.get("credits_used", 6),
+        "credits_used": job.get("credits_used"),
         "balance_remaining": job.get("balance_remaining"),
     }
 
@@ -54,6 +54,7 @@ async def generate_image(
 async def generate_video(
     prompt: str,
     image_url: str | None = None,
+    model: str = "auto",
     style: str | None = None,
 ) -> dict:
     """
@@ -65,14 +66,22 @@ async def generate_video(
     Args:
         prompt: Description of the video to generate
         image_url: Optional source image URL (for image-to-video mode)
+        model: Model to use — "auto" (default, picks best), "veo" (Veo 3.1),
+            or "kling" (Kling). Veo 3.1 is best for cinematic quality.
         style: Style preset (cinematic, realistic, artistic)
 
     Returns:
-        Dict with job_id, status, result_url (video URL when done),
-        credits_used, and balance_remaining.
+        Dict with video_url, job_id, credits_used, and balance_remaining.
     """
     client = YaparAIClient()
-    mode = "img2video" if image_url else "text2video"
+
+    if model == "veo":
+        mode = "gemini_video"
+    elif image_url:
+        mode = "img2video"
+    else:
+        mode = "text2video"
+
     job = await client.generate({
         "type": "video",
         "prompt": prompt,
@@ -87,7 +96,7 @@ async def generate_video(
         "status": "success",
         "video_url": result.get("result_url"),
         "job_id": result.get("job_id"),
-        "credits_used": job.get("credits_used", 350),
+        "credits_used": job.get("credits_used"),
         "balance_remaining": job.get("balance_remaining"),
     }
 
@@ -131,6 +140,43 @@ async def generate_music(
         "status": "success",
         "audio_url": result.get("result_url"),
         "job_id": result.get("job_id"),
-        "credits_used": job.get("credits_used", 14),
+        "credits_used": job.get("credits_used"),
+        "balance_remaining": job.get("balance_remaining"),
+    }
+
+
+async def generate_music_video(
+    prompt: str,
+    style: str = "pop",
+) -> dict:
+    """
+    Generate a music video — AI music + video combined.
+
+    Creates both an original music track and a matching video in one go.
+    The AI composes music and generates visuals that match the mood.
+    Cost: ~364 credits (music + video).
+
+    Args:
+        prompt: Description of the music video (genre, mood, theme)
+        style: Music genre (pop, rock, electronic, classical, lo-fi, ambient)
+
+    Returns:
+        Dict with video_url, job_id, credits_used, and balance_remaining.
+    """
+    client = YaparAIClient()
+    full_prompt = f"[{style}] {prompt}" if style else prompt
+
+    job = await client.generate({
+        "type": "music",
+        "prompt": full_prompt,
+        "mode": "suno_music_video",
+    })
+
+    result = await client.wait_for_result(job["job_id"], timeout=180)
+    return {
+        "status": "success",
+        "video_url": result.get("result_url"),
+        "job_id": result.get("job_id"),
+        "credits_used": job.get("credits_used"),
         "balance_remaining": job.get("balance_remaining"),
     }
