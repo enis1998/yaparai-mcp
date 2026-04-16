@@ -15,7 +15,7 @@ def _get_headers(api_key: str) -> dict:
     return {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "User-Agent": "yaparai-mcp/0.3.0",
+        "User-Agent": "yaparai-mcp/0.3.1",
     }
 
 

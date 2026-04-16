@@ -95,7 +95,7 @@ from yaparai.tools.jobs import get_job_status
 
 mcp = FastMCP(
     "YaparAI",
-    description=(
+    instructions=(
         "YaparAI — all-in-one AI content creation + enterprise platform. "
         "30 tools: image/video/music generation (Flux, SDXL, Imagen 4, "
         "Veo 3.1, Kling, Suno v4), 448+ templates, image editing "
