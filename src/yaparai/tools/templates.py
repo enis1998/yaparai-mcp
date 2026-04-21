@@ -70,6 +70,7 @@ async def execute_template(
     image_url: str | None = None,
     width: int = 512,
     height: int = 512,
+    extra_inputs: dict | None = None,
 ) -> dict:
     """
     Execute a ComfyUI template to generate content.
@@ -84,18 +85,22 @@ async def execute_template(
         image_url: Input image URL (required for image-based templates)
         width: Output width in pixels (64-2048)
         height: Output height in pixels (64-2048)
+        extra_inputs: Additional template-specific inputs (see get_template_detail).
+                      e.g., {"brand_color": "#FF0000", "logo_text": "ACME Corp"}
 
     Returns:
         Dict with job_id, status, and result info.
     """
     client = YaparAIClient()
-    payload = {
+    payload: dict = {
         "prompt": prompt,
         "width": width,
         "height": height,
     }
     if image_url:
         payload["image_url"] = image_url
+    if extra_inputs:
+        payload.update(extra_inputs)
 
     result = await client.execute_template(slug, payload)
 

@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from yaparai.tools._org import resolve_org_id
 from yaparai.client import YaparAIClient
+
+Platform = Literal["instagram", "facebook", "tiktok", "twitter"]
 
 
 async def list_social_accounts(
@@ -28,9 +32,10 @@ async def list_social_accounts(
 
 async def create_social_post(
     text: str,
-    platform: str,
+    platform: Platform,
     account_id: str,
     media_urls: list[str] | None = None,
+    scheduled_at: str | None = None,
     org_id: str | None = None,
 ) -> dict:
     """
@@ -44,6 +49,8 @@ async def create_social_post(
         platform: Target platform ("instagram", "facebook", "tiktok", "twitter")
         account_id: Social account ID (from list_social_accounts)
         media_urls: Optional list of image/video URLs to attach
+        scheduled_at: Optional ISO 8601 datetime to schedule the post
+                      (e.g., "2026-05-01T10:00:00Z"). If None, posts immediately.
         org_id: Organization ID (uses YAPARAI_ORG_ID env var if not provided)
 
     Returns:
@@ -58,14 +65,65 @@ async def create_social_post(
     }
     if media_urls:
         payload["media_urls"] = media_urls
+    if scheduled_at:
+        payload["scheduled_at"] = scheduled_at
     return await client.social_create_post(oid, payload)
+
+
+async def list_social_posts(
+    platform: Platform | None = None,
+    account_id: str | None = None,
+    org_id: str | None = None,
+) -> dict:
+    """
+    List published and scheduled social media posts.
+
+    Returns all posts for the organization, with optional filtering
+    by platform or specific account. Requires enterprise subscription.
+
+    Args:
+        platform: Filter by platform ("instagram", "facebook", "tiktok", "twitter")
+        account_id: Filter by specific social account ID
+        org_id: Organization ID (uses YAPARAI_ORG_ID env var if not provided)
+
+    Returns:
+        List of posts with content, platform, published_at, and engagement stats.
+    """
+    oid = resolve_org_id(org_id)
+    client = YaparAIClient()
+    params: dict = {}
+    if platform:
+        params["platform"] = platform
+    if account_id:
+        params["account_id"] = account_id
+    return await client.social_list_posts(oid, params or None)
+
+
+async def get_social_quota(
+    org_id: str | None = None,
+) -> dict:
+    """
+    Get social media quota and usage limits.
+
+    Returns remaining post quota, message limits, and billing period info.
+    Useful to check before running bulk operations.
+
+    Args:
+        org_id: Organization ID (uses YAPARAI_ORG_ID env var if not provided)
+
+    Returns:
+        Dict with quota limits, used counts, and billing period dates.
+    """
+    oid = resolve_org_id(org_id)
+    client = YaparAIClient()
+    return await client.social_get_quota(oid)
 
 
 async def generate_caption(
     topic: str,
-    platform: str = "instagram",
-    language: str = "tr",
-    tone: str = "professional",
+    platform: Platform = "instagram",
+    language: Literal["tr", "en"] = "tr",
+    tone: Literal["professional", "casual", "fun", "formal"] = "professional",
     org_id: str | None = None,
 ) -> dict:
     """
@@ -96,8 +154,8 @@ async def generate_caption(
 
 async def generate_hashtags(
     caption: str,
-    platform: str = "instagram",
-    language: str = "tr",
+    platform: Platform = "instagram",
+    language: Literal["tr", "en"] = "tr",
     org_id: str | None = None,
 ) -> dict:
     """
@@ -123,9 +181,7 @@ async def generate_hashtags(
     })
 
 
-async def list_inbox(
-    org_id: str | None = None,
-) -> dict:
+async def list_inbox(org_id: str | None = None) -> dict:
     """
     List social media inbox conversations (DMs, comments).
 

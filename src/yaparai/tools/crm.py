@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from yaparai.tools._org import resolve_org_id
 from yaparai.client import YaparAIClient
 
 
 async def list_customers(
     search: str | None = None,
-    platform: str | None = None,
+    platform: Literal["instagram", "facebook", "whatsapp"] | None = None,
     tag: str | None = None,
     org_id: str | None = None,
 ) -> dict:
@@ -117,8 +119,10 @@ async def send_shipping_info(
 
 
 async def bulk_message(
-    customer_ids: list[str],
     message: str,
+    customer_ids: list[str] | None = None,
+    tag: str | None = None,
+    platform: Literal["instagram", "facebook", "whatsapp"] | None = None,
     media_urls: list[str] | None = None,
     org_id: str | None = None,
 ) -> dict:
@@ -126,11 +130,14 @@ async def bulk_message(
     Send a message to multiple customers at once.
 
     Broadcast promotions, announcements, or updates to a list of
-    customers via their respective social platforms.
+    customers via their respective social platforms. You can target by
+    specific IDs, a customer tag, or a platform.
 
     Args:
-        customer_ids: List of customer IDs to message
         message: Message text to send
+        customer_ids: List of specific customer IDs to message
+        tag: Send to all customers with this tag (e.g., "vip", "returning")
+        platform: Send only to customers from this platform
         media_urls: Optional list of image/video URLs to attach
         org_id: Organization ID (uses YAPARAI_ORG_ID env var if not provided)
 
@@ -139,10 +146,13 @@ async def bulk_message(
     """
     oid = resolve_org_id(org_id)
     client = YaparAIClient()
-    payload: dict = {
-        "customer_ids": customer_ids,
-        "message": message,
-    }
+    payload: dict = {"message": message}
+    if customer_ids:
+        payload["customer_ids"] = customer_ids
+    if tag:
+        payload["tag"] = tag
+    if platform:
+        payload["platform"] = platform
     if media_urls:
         payload["media_urls"] = media_urls
     return await client.crm_bulk_message(oid, payload)

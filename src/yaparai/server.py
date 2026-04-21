@@ -70,6 +70,8 @@ from yaparai.tools.organizations import list_organizations
 from yaparai.tools.social import (
     list_social_accounts,
     create_social_post,
+    list_social_posts,
+    get_social_quota,
     generate_caption,
     generate_hashtags,
     list_inbox,
@@ -97,10 +99,10 @@ mcp = FastMCP(
     "YaparAI",
     instructions=(
         "YaparAI — all-in-one AI content creation + enterprise platform. "
-        "30 tools: image/video/music generation (Flux, SDXL, Imagen 4, "
+        "32 tools: image/video/music generation (Flux, SDXL, Imagen 4, "
         "Veo 3.1, Kling, Suno v4), 448+ templates, image editing "
         "(background removal, face swap, virtual try-on), AI text & vision, "
-        "social media management (post, caption, inbox, AI auto-reply), "
+        "social media management (post, caption, inbox, AI auto-reply, quota), "
         "CRM (customers, shipping, bulk messaging), and chatbot interaction. "
         "100 free credits on signup. "
         "Get your API key at https://www.yaparai.com/settings"
@@ -141,9 +143,11 @@ mcp.tool(chat_with_bot)
 # Enterprise: Organizations (1)
 mcp.tool(list_organizations)
 
-# Enterprise: Social Media (8)
+# Enterprise: Social Media (10)
 mcp.tool(list_social_accounts)
 mcp.tool(create_social_post)
+mcp.tool(list_social_posts)
+mcp.tool(get_social_quota)
 mcp.tool(generate_caption)
 mcp.tool(generate_hashtags)
 mcp.tool(list_inbox)

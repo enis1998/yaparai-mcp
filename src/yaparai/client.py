@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import random
 import httpx
 
 from yaparai.config import YAPARAI_API_KEY, YAPARAI_BASE_URL
+
+logger = logging.getLogger("yaparai")
 
 # Module-level client for connection reuse across tool calls
 _shared_client: httpx.AsyncClient | None = None
@@ -57,41 +61,65 @@ class YaparAIClient:
             )
         return _shared_client
 
-    async def _request(self, method: str, path: str, **kwargs) -> dict:
-        """Make an HTTP request with error handling."""
-        client = await self._client()
-        try:
-            resp = await client.request(method, path, **kwargs)
-        except httpx.ConnectError:
-            raise ConnectionError(
-                f"Cannot connect to YaparAI API at {self.base_url}. "
-                "Check your internet connection."
-            )
-        except httpx.TimeoutException:
-            raise TimeoutError(
-                "YaparAI API request timed out. The service may be busy — try again."
-            )
+    async def _request(self, method: str, path: str, retries: int = 3, **kwargs) -> dict:
+        """Make an HTTP request with error handling and exponential backoff retry."""
+        last_exc: Exception | None = None
+        for attempt in range(retries):
+            try:
+                client = await self._client()
+                logger.debug("→ %s %s (attempt %d/%d)", method, path, attempt + 1, retries)
+                resp = await client.request(method, path, **kwargs)
+                logger.debug("← %s %s", resp.status_code, path)
+            except httpx.ConnectError as exc:
+                last_exc = exc
+                if attempt < retries - 1:
+                    wait = (2 ** attempt) + random.uniform(0, 1)
+                    logger.warning("Connection error, retrying in %.1fs…", wait)
+                    await asyncio.sleep(wait)
+                    continue
+                raise ConnectionError(
+                    f"Cannot connect to YaparAI API at {self.base_url}. "
+                    "Check your internet connection."
+                ) from exc
+            except httpx.TimeoutException as exc:
+                last_exc = exc
+                if attempt < retries - 1:
+                    wait = (2 ** attempt) + random.uniform(0, 1)
+                    logger.warning("Timeout, retrying in %.1fs…", wait)
+                    await asyncio.sleep(wait)
+                    continue
+                raise TimeoutError(
+                    "YaparAI API request timed out. The service may be busy — try again."
+                ) from exc
 
-        if resp.status_code == 401:
-            raise PermissionError(
-                "Invalid API key. Check your YAPARAI_API_KEY or generate "
-                "a new one at https://www.yaparai.com/settings"
-            )
-        if resp.status_code == 402:
-            raise RuntimeError(
-                "Insufficient credits. Top up at https://www.yaparai.com/pricing"
-            )
-        if resp.status_code == 403:
-            raise PermissionError(
-                "Access denied. You may not have permission for this resource."
-            )
-        if resp.status_code == 429:
-            raise RuntimeError(
-                "Rate limit exceeded. Please wait a moment and try again."
-            )
+            if resp.status_code == 401:
+                raise PermissionError(
+                    "Invalid API key. Check your YAPARAI_API_KEY or generate "
+                    "a new one at https://www.yaparai.com/settings"
+                )
+            if resp.status_code == 402:
+                raise RuntimeError(
+                    "Insufficient credits. Top up at https://www.yaparai.com/pricing"
+                )
+            if resp.status_code == 403:
+                raise PermissionError(
+                    "Access denied. You may not have permission for this resource."
+                )
+            if resp.status_code == 429:
+                # Rate limit — retry with longer backoff
+                if attempt < retries - 1:
+                    wait = 5 * (attempt + 1)
+                    logger.warning("Rate limited, retrying in %ds…", wait)
+                    await asyncio.sleep(wait)
+                    continue
+                raise RuntimeError(
+                    "Rate limit exceeded. Please wait a moment and try again."
+                )
 
-        resp.raise_for_status()
-        return resp.json()
+            resp.raise_for_status()
+            return resp.json()
+
+        raise RuntimeError("Request failed after all retries.") from last_exc
 
     # ── Public API ──────────────────────────────────────────────
 

@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from yaparai.client import YaparAIClient
 
 
 async def generate_image(
     prompt: str,
+    model: Literal["auto", "flux", "sdxl", "imagen4"] = "auto",
     negative_prompt: str = "",
     width: int = 512,
     height: int = 512,
-    style: str | None = None,
+    style: Literal["realistic", "anime", "cinematic", "artistic"] | None = None,
 ) -> dict:
     """
     Generate an image using AI.
@@ -21,6 +24,8 @@ async def generate_image(
 
     Args:
         prompt: Description of the image to generate (Turkish or English)
+        model: AI model to use — "auto" (smart routing), "flux" (best quality),
+               "sdxl" (fast), "imagen4" (Google, photorealistic)
         negative_prompt: Things to avoid in the image
         width: Image width in pixels (64-2048, default 512)
         height: Image height in pixels (64-2048, default 512)
@@ -31,16 +36,18 @@ async def generate_image(
         credits_used, and balance_remaining.
     """
     client = YaparAIClient()
-    job = await client.generate({
+    payload: dict = {
         "type": "image",
         "prompt": prompt,
         "negative_prompt": negative_prompt,
         "width": width,
         "height": height,
         "style": style,
-    })
+    }
+    if model != "auto":
+        payload["model"] = model
 
-    # Poll until result is ready
+    job = await client.generate(payload)
     result = await client.wait_for_result(job["job_id"], timeout=60)
     return {
         "status": "success",
@@ -54,8 +61,8 @@ async def generate_image(
 async def generate_video(
     prompt: str,
     image_url: str | None = None,
-    model: str = "auto",
-    style: str | None = None,
+    model: Literal["auto", "veo", "kling"] = "auto",
+    style: Literal["cinematic", "realistic", "artistic"] | None = None,
 ) -> dict:
     """
     Generate a video using AI.
@@ -90,7 +97,6 @@ async def generate_video(
         "style": style,
     })
 
-    # Video takes longer — extend timeout
     result = await client.wait_for_result(job["job_id"], timeout=180)
     return {
         "status": "success",
@@ -103,7 +109,7 @@ async def generate_video(
 
 async def generate_music(
     prompt: str,
-    style: str = "pop",
+    style: Literal["pop", "rock", "electronic", "classical", "lo-fi", "ambient"] = "pop",
     instrumental: bool = False,
 ) -> dict:
     """
@@ -147,7 +153,7 @@ async def generate_music(
 
 async def generate_music_video(
     prompt: str,
-    style: str = "pop",
+    style: Literal["pop", "rock", "electronic", "classical", "lo-fi", "ambient"] = "pop",
 ) -> dict:
     """
     Generate a music video — AI music + video combined.

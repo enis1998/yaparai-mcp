@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from yaparai.client import YaparAIClient
 
 
@@ -11,7 +13,7 @@ async def transform_image(
     negative_prompt: str = "",
     width: int = 512,
     height: int = 512,
-    style: str | None = None,
+    style: Literal["realistic", "anime", "cinematic", "artistic"] | None = None,
 ) -> dict:
     """
     Transform an existing image using AI (image-to-image).
@@ -54,20 +56,21 @@ async def transform_image(
 
 
 async def remove_background(
-    prompt: str,
     image_url: str,
+    output_format: Literal["transparent", "white"] = "transparent",
 ) -> dict:
     """
     Remove the background from an image using AI.
 
-    Upload an image and get back a version with the background removed
-    (transparent or white). Works great for product photos, portraits,
-    and any image where you need a clean cutout.
+    Upload an image and get back a version with the background removed.
+    Works great for product photos, portraits, and any image where you
+    need a clean cutout.
     Cost: ~2 credits.
 
     Args:
-        prompt: Description or instructions (e.g., "remove background, keep the person")
         image_url: URL of the image to process
+        output_format: Background replacement — "transparent" (PNG with alpha)
+                       or "white" (white background)
 
     Returns:
         Dict with image_url (processed image), job_id, credits_used,
@@ -77,8 +80,8 @@ async def remove_background(
     job = await client.generate({
         "type": "image",
         "mode": "editor_bg_remove",
-        "prompt": prompt,
         "image_url": image_url,
+        "output_format": output_format,
     })
 
     result = await client.wait_for_result(job["job_id"], timeout=60)
@@ -92,19 +95,22 @@ async def remove_background(
 
 
 async def swap_face(
-    prompt: str,
     image_url: str,
+    face_url: str,
+    prompt: str = "",
 ) -> dict:
     """
     Swap a face in an image using AI.
 
-    Provide a source image and instructions for the face swap.
-    The AI will replace the face while keeping the rest of the image intact.
+    Provide a target image and a source face image. The AI replaces the
+    face in the target image with the face from the source image while
+    keeping the rest of the image intact.
     Cost: ~6 credits.
 
     Args:
-        prompt: Instructions for the face swap
-        image_url: URL of the image containing the face to swap
+        image_url: Target image URL (the image where the face will be replaced)
+        face_url: Source face image URL (the face to use for swapping)
+        prompt: Optional additional instructions for the face swap
 
     Returns:
         Dict with image_url (result image), job_id, credits_used,
@@ -116,6 +122,7 @@ async def swap_face(
         "mode": "editor_face_swap",
         "prompt": prompt,
         "image_url": image_url,
+        "face_url": face_url,
     })
 
     result = await client.wait_for_result(job["job_id"], timeout=60)
