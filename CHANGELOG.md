@@ -6,7 +6,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
-## [Unreleased]
+## [0.4.0] — 2026-04-21
+
+Community contribution by [@enis1998](https://github.com/enis1998).
 
 ### Added
 - `list_social_posts` tool — list published and scheduled social media posts

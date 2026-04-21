@@ -8,7 +8,7 @@ All-in-one AI content creation + enterprise social media & CRM — directly from
 
 ## What is YaparAI?
 
-[YaparAI](https://www.yaparai.com) is an all-in-one AI platform with 30 tools:
+[YaparAI](https://www.yaparai.com) is an all-in-one AI platform with 32 tools:
 
 - **Image Generation** — Flux, SDXL, Imagen 4 (text-to-image, image-to-image)
 - **Video Generation** — Veo 3.1, Kling (text-to-video, image-to-video)
@@ -227,6 +227,15 @@ asyncio.run(main())
 - **Gallery**: [yaparai.com/gallery](https://www.yaparai.com/gallery)
 - **API Keys**: [yaparai.com/settings](https://www.yaparai.com/settings)
 - **Support**: destek@yaparai.com
+
+## Contributors
+
+Thanks to everyone who has contributed to YaparAI MCP!
+
+- [@ilhankilic](https://github.com/ilhankilic) — Creator & maintainer
+- [@enis1998](https://github.com/enis1998) — v0.4.0: 2 new tools, retry mechanism, type safety, test suite
+
+Want to contribute? Check out [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
